@@ -1,0 +1,3 @@
+[submodule "ActuallyAGameEngine"]
+	path = ActuallyAGameEngine
+	url = https://github.com/ZackMason/ActuallyAGameEngine
