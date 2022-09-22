@@ -33,6 +33,8 @@ using nlohmann::json;
 struct pong_game_t;
 
 struct game_server_t : public server_t {
+    // using pointers to access game data because pong_game_t is not defined here 
+    // and I want to keep this example just in one file
     f32* player_positions{nullptr};
     bool connected = false;
 
@@ -41,7 +43,7 @@ struct game_server_t : public server_t {
     }
 
     void on_connect(const ENetEvent& event) override {
-        logger_t::info("Player connected");
+        logger_t::info(fmt::format("Player connected - {}", event.peer));
 
         connected = true;
 
@@ -61,17 +63,13 @@ struct game_server_t : public server_t {
     }
 
     void on_packet(const ENetEvent& event) override {
-        logger_t::info("Server received ----");
         std::string data = reinterpret_cast<const char*>(event.packet->data);
-        logger_t::info(data);
 
         json j = json::parse(data);
         if (j.contains("type") == false) return;
 
         switch(static_cast<sid_t>(j["type"].get<size_t>())) {
             case "sync"_sid: {
-                auto p = j["data"].get<f32>();
-                player_positions[1] = p;
 
             } break;
             case "move"_sid: {
@@ -94,8 +92,6 @@ struct game_client_t : public client_t {
     void on_packet(const ENetEvent& event) override {
         if (event.packet->data != nullptr) {
             std::string data = reinterpret_cast<const char*>(event.packet->data);
-            //logger_t::info("Client received ----");
-            //logger_t::info(data);
 
             json j = json::parse(data);
             if (j.contains("type") == false) return;
@@ -294,7 +290,6 @@ struct pong_game_t {
             server->pump_event();
         } else if (client) {
             client->poll_events(1);
-            
         }
 
         if (ball_position.y < 0 || ball_position.y > window.height) {
@@ -340,6 +335,7 @@ struct pong_game_t {
         );
     }
 
+    // to remove static analyzer complaints
     pong_game_t& operator=(const pong_game_t&) = delete;
     pong_game_t& operator=(pong_game_t&&) = delete;
     pong_game_t(const pong_game_t&) = delete;
@@ -347,12 +343,11 @@ struct pong_game_t {
 };
 
 int main(int argc, char** argv) {
-
     logger_t::open_file(argc>1?"server.log":"client.log", "./");
 
     window_t window;
     window.open_window();
-    //window.set_vsync(true);
+
     window.set_title((std::string("AAGE Pong - ") + (argc>1 ? "server" : "client")).c_str());
     pong_game_t game{window, argc > 1};
 
