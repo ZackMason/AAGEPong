@@ -44,7 +44,7 @@ struct game_server_t : public server_t {
         connected = true;
 
         json j;
-        j["type"] = "connection";
+        //j["type"] = "connection"_sid;
         j["data"] = "hello";
 
         packet_t packet{j.dump()};
