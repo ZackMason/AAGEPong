@@ -37,17 +37,14 @@ struct game_server_t : public server_t {
     // and I want to keep this example just in one file
     f32* player_positions{nullptr};
     bool connected = false;
-
-    void on_tick() override {
-        
-    }
-
+    
     void on_connect(const ENetEvent& event) override {
-        logger_t::info(fmt::format("Player connected - {}", event.peer));
+        logger_t::info(fmt::format("Player connected - {}", static_cast<void*>(event.peer)));
 
         connected = true;
 
         json j;
+        j["type"] = "connection";
         j["data"] = "hello";
 
         packet_t packet{j.dump()};
@@ -69,14 +66,13 @@ struct game_server_t : public server_t {
         if (j.contains("type") == false) return;
 
         switch(static_cast<sid_t>(j["type"].get<size_t>())) {
-            case "sync"_sid: {
-
-            } break;
             case "move"_sid: {
                 auto dir = j["data"].get<int>();
                 player_positions[1] += dir / 10.0f;
                 player_positions[1] = player_positions[1] < 0.0f ? 0.0f : player_positions[1] > 1.0f ? 1.0f : player_positions[1];
             } break;
+            default:
+                logger_t::warn("Server - Unknown packet type");
         }
 
         server_t::on_packet(event);
